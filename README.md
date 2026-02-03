@@ -41,16 +41,45 @@ This bioprinter features independent dual printheads with precision syringe extr
 
 ### Temperature Control
 
-3 independent Peltier channels with DPDT relay switching:
+3 independent Peltier channels with DPDT relay switching for precise bio-ink temperature management:
 - **P60** - Peltier channel 0
 - **P61** - Peltier channel 1
 - **P62** - Peltier channel 2
+
+**PID tuned for 4°C to 40°C** - optimized for cell-laden hydrogels and temperature-sensitive biomaterials.
+
+### Extrusion Systems
+
+Dual extrusion modes for versatile biomaterial deposition:
+
+| System | Motor | Application |
+|--------|-------|-------------|
+| **Syringe Pump** | NEMA 11 | High-viscosity hydrogels, cell-laden bio-inks |
+| **Pneumatic** | Solenoid valve | Low-viscosity materials, rapid dispensing |
 
 ### UV Crosslinking
 
 Dual UV LED arrays (365nm/405nm) with PWM intensity control:
 - **P8** - UV LED 1
 - **P69** - UV LED 2
+
+---
+
+### Axis Calibration
+
+All axes calibrated for precise motion control:
+- Steps/mm calculated from lead screw pitch and microstepping
+- Empirically verified with dial indicators
+- Sub-micron repeatability for consistent layer deposition
+
+---
+
+## Bioprinting Capabilities
+
+- **Hydrogel scaffolds** - Alginate, GelMA, collagen-based bio-inks
+- **Cell-laden constructs** - Temperature-controlled for cell viability
+- **Multi-material printing** - Dual nozzle for support/structure combinations
+- **UV crosslinking** - In-situ photopolymerization of GelMA and similar materials
 
 ---
 
@@ -62,6 +91,7 @@ Based on Marlin 2.x with custom modifications for bioprinting:
 - Peltier DPDT control with signal inversion
 - Independent printhead Z-offset (I/J axes displayed as U/V)
 - Slow precision movements for syringe extrusion
+- PID temperature control tuned for bioprinting range (4-40°C)
 
 ### Build
 
