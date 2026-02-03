@@ -85,42 +85,9 @@ void GcodeSuite::M42() {
   const byte pin_status = parser.value_byte();
 
   #if HAS_FAN
-    // BIOPRINTER: Allow direct control of CUSTOM_BED_PIN even if it's a fan pin
-    #if CUSTOM_BED_PIN
-      const bool is_custom_bed = (pin == CUSTOM_BED_PIN);
-      if (!is_custom_bed)
-    #endif
-    // BIOPRINTER: Allow direct control of CUSTOM_UV_LED_PIN even if it's a fan pin
-    #if CUSTOM_UV_LED_PIN
-      if (pin != CUSTOM_UV_LED_PIN)
-    #endif
-    {
-      switch (pin) {
-        #if HAS_FAN0
-          case FAN0_PIN: thermalManager.fan_speed[0] = pin_status; return;
-        #endif
-        #if HAS_FAN1
-          case FAN1_PIN: thermalManager.fan_speed[1] = pin_status; return;
-        #endif
-        #if HAS_FAN2
-          case FAN2_PIN: thermalManager.fan_speed[2] = pin_status; return;
-        #endif
-        #if HAS_FAN3
-          case FAN3_PIN: thermalManager.fan_speed[3] = pin_status; return;
-        #endif
-        #if HAS_FAN4
-          case FAN4_PIN: thermalManager.fan_speed[4] = pin_status; return;
-        #endif
-        #if HAS_FAN5
-          case FAN5_PIN: thermalManager.fan_speed[5] = pin_status; return;
-        #endif
-        #if HAS_FAN6
-          case FAN6_PIN: thermalManager.fan_speed[6] = pin_status; return;
-        #endif
-        #if HAS_FAN7
-          case FAN7_PIN: thermalManager.fan_speed[7] = pin_status; return;
-        #endif
-      }
+    switch (pin) {
+      #define _CASE(N) case FAN##N##_PIN: thermalManager.fan_speed[N] = pin_status; return;
+      REPEAT(FAN_COUNT, _CASE)
     }
   #endif
 
@@ -130,17 +97,30 @@ void GcodeSuite::M42() {
   }
 
   // An OUTPUT_OPEN_DRAIN should not be changed to normal OUTPUT (STM32)
-  // Use M42 Px M1/5 S0/1 to set the output type and then set value
+  // Use M42 Px T1/5 S0/1 to set the output type and then set value
   #ifndef OUTPUT_OPEN_DRAIN
     pinMode(pin, OUTPUT);
   #endif
-  extDigitalWrite(pin, pin_status);
+
+  // BIOPRINTER: Invert output for Peltier pins (hardware inverts signal)
+  // S255 = heating (relay ON), S0 = cooling (relay OFF)
+  byte output_value = pin_status;
+  #if CUSTOM_BED_PIN
+    if (pin == CUSTOM_BED_PIN) output_value = 255 - pin_status;
+  #endif
+  #if CUSTOM_HEATER_1_PIN
+    if (pin == CUSTOM_HEATER_1_PIN) output_value = 255 - pin_status;
+  #endif
+  #if CUSTOM_HEATER_2_PIN
+    if (pin == CUSTOM_HEATER_2_PIN) output_value = 255 - pin_status;
+  #endif
+  extDigitalWrite(pin, output_value);
 
   #ifdef ARDUINO_ARCH_STM32
     // A simple I/O will be set to 0 by hal.set_pwm_duty()
-    if (pin_status <= 1 && !PWM_PIN(pin)) return;
+    if (output_value <= 1 && !PWM_PIN(pin)) return;
   #endif
-  hal.set_pwm_duty(pin, pin_status);
+  hal.set_pwm_duty(pin, output_value);
 }
 
 #endif // DIRECT_PIN_CONTROL

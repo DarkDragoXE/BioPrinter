@@ -1194,24 +1194,31 @@ void setup() {
     digitalWrite(CUSTOM_BED_PIN, BED_CUSTOM_PIN_STATE);
   #endif
 
-  // BIOPRINTER: Initialize UV LED pin (M42 P61 control for photopolymer crosslinking)
-  #if CUSTOM_UV_LED_PIN
-    pinMode(CUSTOM_UV_LED_PIN, OUTPUT);
-    digitalWrite(CUSTOM_UV_LED_PIN, UV_LED_CUSTOM_PIN_STATE);
+  // BIOPRINTER: Initialize UV LED pins (M42 control for photopolymer crosslinking)
+  #if CUSTOM_UV_LED1_PIN
+    pinMode(CUSTOM_UV_LED1_PIN, OUTPUT);
+    digitalWrite(CUSTOM_UV_LED1_PIN, UV_LED1_CUSTOM_PIN_STATE);
+  #endif
+  #if CUSTOM_UV_LED2_PIN
+    pinMode(CUSTOM_UV_LED2_PIN, OUTPUT);
+    digitalWrite(CUSTOM_UV_LED2_PIN, UV_LED2_CUSTOM_PIN_STATE);
   #endif
 
-  // BIOPRINTER: Initialize Peltier DPDT pins to HIGH (active-LOW relays: HIGH = OFF)
-  #ifdef CUSTOM_BED_PIN
+  // BIOPRINTER: Initialize Peltier DPDT pins (active-LOW relays)
+  // MATCHED TO KESHAVA firmware pattern
+  // Pin HIGH = relay OFF = Cooling mode (S0)
+  // Pin LOW = relay ON = Heating mode (S255)
+  #if CUSTOM_BED_PIN
     pinMode(CUSTOM_BED_PIN, OUTPUT);
-    digitalWrite(CUSTOM_BED_PIN, HIGH);  // P60 - DPDT OFF at startup
+    digitalWrite(CUSTOM_BED_PIN, BED_CUSTOM_PIN_STATE);  // P60 - startup state from config
   #endif
-  #ifdef CUSTOM_PELTIER1_PIN
-    pinMode(CUSTOM_PELTIER1_PIN, OUTPUT);
-    digitalWrite(CUSTOM_PELTIER1_PIN, HIGH);  // P61 - DPDT OFF at startup
+  #if CUSTOM_HEATER_1_PIN
+    pinMode(CUSTOM_HEATER_1_PIN, OUTPUT);
+    digitalWrite(CUSTOM_HEATER_1_PIN, HEATER_1_CUSTOM_PIN_STATE);  // P61 - startup state from config
   #endif
-  #ifdef CUSTOM_PELTIER_BED_PIN
-    pinMode(CUSTOM_PELTIER_BED_PIN, OUTPUT);
-    digitalWrite(CUSTOM_PELTIER_BED_PIN, HIGH);  // P62 - DPDT OFF at startup
+  #if CUSTOM_HEATER_2_PIN
+    pinMode(CUSTOM_HEATER_2_PIN, OUTPUT);
+    digitalWrite(CUSTOM_HEATER_2_PIN, HEATER_2_CUSTOM_PIN_STATE);  // P62 - startup state from config
   #endif
 
   // Check startup - does nothing if bootloader sets MCUSR to 0

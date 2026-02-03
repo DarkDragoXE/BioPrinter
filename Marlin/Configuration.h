@@ -148,23 +148,23 @@
 // Enable the Bluetooth serial interface on AT90USB devices
 //#define BLUETOOTH
 
-// BIOPRINTER: Custom pin for manual Peltier mode control via M42
-// M42 P60 S0 = Cooling mode (LED off, blocks heating)
-// M42 P60 S255 = Heating mode (LED on, blocks cooling)
-#define CUSTOM_BED_PIN  60  // MATCHED TO KESHAVA
-#define BED_CUSTOM_PIN_STATE LOW  // Start in cooling mode
+// BIOPRINTER: Peltier DPDT signal pins
+// Hardware inverts: write LOW → pin HIGH, write HIGH → pin LOW
+// Relay: HIGH = ON (heating), LOW = OFF (cooling)
+// M42 inversion compensates: S255 = heating, S0 = cooling
+// Startup: write HIGH → pin LOW → relay OFF (cooling)
 
-// BIOPRINTER: Peltier 1 (Extruder 1) DPDT signal control via M42
-// M42 P61 S0 = DPDT relaxed = COOLING mode for Extruder 1
-// M42 P61 S255 = DPDT energized = HEATING mode for Extruder 1
-#define CUSTOM_PELTIER1_PIN  61  // PD13 (FAN3_PIN) - DPDT signal for Peltier 1
-#define PELTIER1_CUSTOM_PIN_STATE LOW  // Start in cooling mode
+// Peltier 0 (E0/Bed channel) DPDT signal
+#define CUSTOM_BED_PIN  60  // PD12 - DPDT for Peltier 0
+#define BED_CUSTOM_PIN_STATE HIGH  // Write HIGH → pin LOW → relay OFF
 
-// BIOPRINTER: Peltier Bed DPDT signal control via M42
-// M42 P62 S0 = DPDT relaxed = COOLING mode for Bed
-// M42 P62 S255 = DPDT energized = HEATING mode for Bed
-#define CUSTOM_PELTIER_BED_PIN  62  // PD14 (FAN4_PIN) - DPDT signal for Bed Peltier
-#define PELTIER_BED_CUSTOM_PIN_STATE LOW  // Start in cooling mode
+// Peltier 1 (E1 channel) DPDT signal
+#define CUSTOM_HEATER_1_PIN  61  // PD13 - DPDT for Peltier 1
+#define HEATER_1_CUSTOM_PIN_STATE HIGH  // Write HIGH → pin LOW → relay OFF
+
+// Peltier 2 (Bed channel) DPDT signal
+#define CUSTOM_HEATER_2_PIN  62  // PD14 - DPDT for Peltier 2
+#define HEATER_2_CUSTOM_PIN_STATE HIGH  // Write HIGH → pin LOW → relay OFF
 
 // BIOPRINTER: UV LED 1 intensity control via M42 (photopolymer crosslinking)
 // M42 P8 S0 = UV LED 1 OFF
@@ -1061,7 +1061,7 @@
  * Override with M92
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 400, 400, 400, 3200, 3200, 3200, 500 }  // X/Y/Z: 400 (1600/4), I/J/E0: 3200
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 400, 400, 400, 3200, 3200, 1600, 500 }  // X/Y/Z: 400, I/J: 3200, E0: 1600 (3200/2)
 
 /**
  * Default Max Feed Rate (linear=mm/s, rotational=°/s)

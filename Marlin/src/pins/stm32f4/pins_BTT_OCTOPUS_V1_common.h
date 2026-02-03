@@ -334,12 +334,12 @@
 #endif
 #define HEATER_3_PIN                        PB11  // Heater3
 
-#define FAN_PIN                             PA8   // Fan0
-#define FAN1_PIN                            PE5   // Fan1
-#define FAN2_PIN                            PD12  // Fan2
-#define FAN3_PIN                            PD13  // Fan3
-#define FAN4_PIN                            PD14  // Fan4
-#define FAN5_PIN                            PD15  // Fan5
+// #define FAN_PIN                             PA8   // Fan0 - BIOPRINTER: Disabled, used for UV LED1
+// #define FAN1_PIN                            PE5   // Fan1 - BIOPRINTER: Disabled, used for UV LED2
+// #define FAN2_PIN                            PD12  // Fan2 - BIOPRINTER: Disabled, used for Peltier E0 DPDT (P60)
+// #define FAN3_PIN                            PD13  // Fan3 - BIOPRINTER: Disabled, used for Peltier E1 DPDT (P61)
+// #define FAN4_PIN                            PD14  // Fan4 - BIOPRINTER: Disabled, used for Peltier Bed DPDT (P62)
+// #define FAN5_PIN                            PD15  // Fan5 - BIOPRINTER: Disabled for future use
 
 //
 // SD Support
