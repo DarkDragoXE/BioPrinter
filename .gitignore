@@ -172,3 +172,7 @@ __pycache__
 
 # Temporary Claude files
 .temp_claude/
+
+# Temp files
+tmpclaude-*
+build_output.txt
