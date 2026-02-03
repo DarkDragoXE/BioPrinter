@@ -98,6 +98,7 @@ G1 E-2 F60      ; Retract 2mm
 
 ## Project
 
+**Project Lead:** Debtonu Bose
 **Organization:** Designing Alley
 **Application:** Tissue engineering, biomaterial deposition, hydrogel scaffolds
 
