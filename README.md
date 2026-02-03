@@ -118,10 +118,18 @@ M42 P8 S128     ; UV LED 1 - 50%
 M42 P8 S0       ; UV LED 1 - Off
 ```
 
-### Syringe Extrusion
+### Syringe Extrusion (T0)
 ```gcode
+T0              ; Select syringe extruder
 G1 E5 F60       ; Extrude 5mm at 1mm/s
 G1 E-2 F60      ; Retract 2mm
+```
+
+### Pneumatic Dispensing (T1)
+```gcode
+T1              ; Select pneumatic system
+G1 E10 F60      ; Valve open for 10 seconds
+G1 E0 F60       ; Valve close
 ```
 
 ---
