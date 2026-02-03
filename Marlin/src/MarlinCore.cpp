@@ -1200,6 +1200,20 @@ void setup() {
     digitalWrite(CUSTOM_UV_LED_PIN, UV_LED_CUSTOM_PIN_STATE);
   #endif
 
+  // BIOPRINTER: Initialize Peltier DPDT pins to HIGH (active-LOW relays: HIGH = OFF)
+  #ifdef CUSTOM_BED_PIN
+    pinMode(CUSTOM_BED_PIN, OUTPUT);
+    digitalWrite(CUSTOM_BED_PIN, HIGH);  // P60 - DPDT OFF at startup
+  #endif
+  #ifdef CUSTOM_PELTIER1_PIN
+    pinMode(CUSTOM_PELTIER1_PIN, OUTPUT);
+    digitalWrite(CUSTOM_PELTIER1_PIN, HIGH);  // P61 - DPDT OFF at startup
+  #endif
+  #ifdef CUSTOM_PELTIER_BED_PIN
+    pinMode(CUSTOM_PELTIER_BED_PIN, OUTPUT);
+    digitalWrite(CUSTOM_PELTIER_BED_PIN, HIGH);  // P62 - DPDT OFF at startup
+  #endif
+
   // Check startup - does nothing if bootloader sets MCUSR to 0
   const byte mcu = hal.get_reset_source();
   hal.clear_reset_source();

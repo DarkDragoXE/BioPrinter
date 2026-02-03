@@ -399,6 +399,14 @@ void GcodeSuite::G28() {
       constexpr bool doZ = false;
     #endif
 
+    // BIOPRINTER: Home I and J (U/V) axes FIRST
+    #if HAS_I_AXIS
+      if (doI) homeaxis(I_AXIS);
+    #endif
+    #if HAS_J_AXIS
+      if (doJ) homeaxis(J_AXIS);
+    #endif
+
     TERN_(HOME_Z_FIRST, if (doZ) homeaxis(Z_AXIS));
 
     const bool seenR = parser.seenval('R');
@@ -481,9 +489,10 @@ void GcodeSuite::G28() {
         }
       #endif
 
+      // BIOPRINTER: I and J are homed first (at the beginning), skip them here
       SECONDARY_AXIS_CODE(
-        if (doI) homeaxis(I_AXIS),
-        if (doJ) homeaxis(J_AXIS),
+        ,  // Skip I - already homed first
+        ,  // Skip J - already homed first
         if (doK) homeaxis(K_AXIS),
         if (doU) homeaxis(U_AXIS),
         if (doV) homeaxis(V_AXIS),
