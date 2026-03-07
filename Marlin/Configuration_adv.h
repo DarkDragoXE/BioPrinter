@@ -719,8 +719,8 @@
  *
  * Pin Assignments:
  * - PD12 (FAN2_PIN): Signal to ULN2003 IN1 → controls DPDT polarity
- *   • HIGH = DPDT energized → Peltier HEATING mode
- *   • LOW  = DPDT relaxed   → Peltier COOLING mode
+ *   • HIGH = DPDT energized → Peltier HEATING mode  (M42 S0   → pin HIGH → heating)
+ *   • LOW  = DPDT relaxed   → Peltier COOLING mode (M42 S255 → pin LOW  → cooling)
  * - PA2 (HEATER_0_PIN): PWM to MOSFET → controls power to Peltier
  *
  * Wiring:
@@ -906,7 +906,7 @@
 
 //#define SENSORLESS_BACKOFF_MM  { 2, 2, 0 }  // (linear=mm, rotational=°) Backoff from endstops before sensorless homing
 
-#define HOMING_BUMP_MM      { 5, 5, 2, 2, 2 }    // (linear=mm, rotational=°) X, Y, Z, I, J backoff after first bump
+#define HOMING_BUMP_MM      { 3, 3, 2, 2, 2 }    // (linear=mm, rotational=°) X, Y, Z, I, J backoff after first bump
 #define HOMING_BUMP_DIVISOR { 2, 2, 4, 2, 2 }    // Re-Bump Speed Divisor - X, Y, Z, I, J
 
 //#define HOMING_BACKOFF_POST_MM { 2, 2, 2 }  // (linear=mm, rotational=°) Backoff from endstops after homing
@@ -1349,7 +1349,7 @@
 // @section lcd
 
 #if HAS_MANUAL_MOVE_MENU
-  #define MANUAL_FEEDRATE { 150*60, 150*60, 5*60, 5*60, 5*60, 3*60 } // BIOPRINTER: manual control (20mm/s XY, 3mm/s Z, 5mm/s IJ, 3mm/s E)
+  #define MANUAL_FEEDRATE { 10*60, 10*60, 3*60, 3*60, 3*60, 2*60 } // BIOPRINTER: matches DEFAULT_MAX_FEEDRATE (X/Y:10, Z/I/J:3, E:2 mm/s)
   #define FINE_MANUAL_MOVE 0.025    // (mm) Smallest manual move (< 0.1mm) applying to Z on most machines
   #if IS_ULTIPANEL
     #define MANUAL_E_MOVES_RELATIVE // Display extruder move distance rather than "position"
@@ -2922,23 +2922,23 @@
   #endif
 
   #if AXIS_IS_TMC(I)
-    #define I_CURRENT      600  // BIOPRINTER: NEMA 8 JK20HST30-0604 rated current (0.6A)
+    #define I_CURRENT      500  // BIOPRINTER: Reduced from 600mA to prevent overheating
     #define I_CURRENT_HOME I_CURRENT
     #define I_MICROSTEPS    16
     #define I_RSENSE         0.11
     #define I_CHAIN_POS     -1
     //#define I_INTERPOLATE  true
-    //#define I_HOLD_MULTIPLIER 0.5
+    #define I_HOLD_MULTIPLIER 0.3  // BIOPRINTER: 30% hold current to reduce heat
   #endif
 
   #if AXIS_IS_TMC(J)
-    #define J_CURRENT      600  // BIOPRINTER: NEMA 8 JK20HST30-0604 rated current (0.6A)
+    #define J_CURRENT      500  // BIOPRINTER: Reduced from 600mA to prevent overheating
     #define J_CURRENT_HOME J_CURRENT
     #define J_MICROSTEPS    16
     #define J_RSENSE         0.11
     #define J_CHAIN_POS     -1
     //#define J_INTERPOLATE  true
-    //#define J_HOLD_MULTIPLIER 0.5
+    #define J_HOLD_MULTIPLIER 0.3  // BIOPRINTER: 30% hold current to reduce heat
   #endif
 
   #if AXIS_IS_TMC(K)
@@ -3198,7 +3198,7 @@
    * M912 - Clear stepper driver overtemperature pre-warn condition flag.
    * M122 - Report driver parameters (Requires TMC_DEBUG)
    */
-  //#define MONITOR_DRIVER_STATUS
+  #define MONITOR_DRIVER_STATUS  // BIOPRINTER: detect TMC UART failures (intermittent X homing issue)
 
   #if ENABLED(MONITOR_DRIVER_STATUS)
     #define CURRENT_STEP_DOWN     50  // [mA]
@@ -3307,7 +3307,7 @@
    * Enable M122 debugging command for TMC stepper drivers.
    * M122 S0/1 will enable continuous reporting.
    */
-  //#define TMC_DEBUG
+  #define TMC_DEBUG
 
   /**
    * You can set your own advanced settings by filling in predefined functions.
@@ -3974,7 +3974,7 @@
 /**
  * Auto-report position with M154 S<seconds>
  */
-//#define AUTO_REPORT_POSITION
+#define AUTO_REPORT_POSITION  // BIOPRINTER: Enabled for BTT TFT70 V3.0 (M154 position polling)
 
 /**
  * Include capabilities in M115 output

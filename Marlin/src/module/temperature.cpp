@@ -1342,6 +1342,7 @@ void Temperature::min_temp_error(const heater_id_t heater_id) {
           // MATCHED TO KESHAVA: Using CUSTOM_BED_PIN
           #if CUSTOM_BED_PIN
             const bool mode_pin_state = READ(CUSTOM_BED_PIN);  // HIGH=heat, LOW=cool
+            // Note: M42 inverts S value → M42 S0 writes pin HIGH (heating), S255 writes pin LOW (cooling)
 
             if (temp_hotend[ee].target > chamber_current) {
               // Wants to HEAT

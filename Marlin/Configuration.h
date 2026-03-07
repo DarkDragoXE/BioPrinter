@@ -102,7 +102,7 @@
  */
 // Choose the name from boards.h that matches your setup
 #ifndef MOTHERBOARD
-  #define MOTHERBOARD BOARD_BTT_OCTOPUS_V1_1
+  #define MOTHERBOARD BOARD_BTT_OCTOPUS_PRO_V1_0
 #endif
 
 /**
@@ -134,7 +134,7 @@
  * Currently Ethernet (-2) is only supported on Teensy 4.1 boards.
  * :[-2, -1, 0, 1, 2, 3, 4, 5, 6, 7]
  */
-#define SERIAL_PORT_2 -1
+#define SERIAL_PORT_2 -1      // BIOPRINTER: Reverted - USART3 init interferes with USART1 on Octopus Pro
 //#define BAUDRATE_2 250000   // Enable to override BAUDRATE
 
 /**
@@ -150,13 +150,14 @@
 
 // BIOPRINTER: Peltier DPDT signal pins
 // Hardware inverts: write LOW → pin HIGH, write HIGH → pin LOW
-// Relay: HIGH = ON (heating), LOW = OFF (cooling)
-// M42 inversion compensates: S255 = heating, S0 = cooling
-// Startup: write HIGH → pin LOW → relay OFF (cooling)
+// Pin HIGH = relay energized = HEATING mode
+// Pin LOW  = relay relaxed   = COOLING mode
+// M42 inverts S value for this pin: S0 → pin HIGH (heating), S255 → pin LOW (cooling)
+// Startup: write HIGH → relay energized → HEATING mode
 
 // Peltier 0 (E0/Bed channel) DPDT signal
 #define CUSTOM_BED_PIN  60  // PD12 - DPDT for Peltier 0
-#define BED_CUSTOM_PIN_STATE HIGH  // Write HIGH → pin LOW → relay OFF
+#define BED_CUSTOM_PIN_STATE HIGH  // HIGH = heating mode on startup
 
 // Peltier 1 (E1 channel) DPDT signal
 #define CUSTOM_HEATER_1_PIN  61  // PD13 - DPDT for Peltier 1
@@ -1061,7 +1062,7 @@
  * Override with M92
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 400, 400, 400, 3200, 3200, 1600, 500 }  // X/Y/Z: 400, I/J: 3200, E0: 1600 (3200/2)
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 400, 400, 400, 1600, 1600, 1600, 500 }  // X/Y/Z: 400, I/J: 1600 (was 3200, moved 2x too far), E0: 1600
 
 /**
  * Default Max Feed Rate (linear=mm/s, rotational=°/s)
@@ -1097,7 +1098,7 @@
  *   M204 T    Travel Acceleration
  */
 #define DEFAULT_ACCELERATION          150     // BIOPRINTER: gentle print acceleration (harmonized with max accel)
-#define DEFAULT_RETRACT_ACCELERATION  1500    // BIOPRINTER: moderate retraction (10x print accel for responsiveness)
+#define DEFAULT_RETRACT_ACCELERATION  150     // BIOPRINTER: match print accel for consistent E behavior
 #define DEFAULT_TRAVEL_ACCELERATION   150     // BIOPRINTER: same as print for consistency (no jerky travel moves)
 
 /**
@@ -1545,7 +1546,7 @@
 // Travel limits (linear=mm, rotational=°) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
 #define Y_MIN_POS 0
-#define Z_MIN_POS 0
+#define Z_MIN_POS 0  // BIOPRINTER: Endstop at 0, only positive movement allowed
 #define E_MIN_POS 0     // E0 extruder homes to 0 position
 #define E_MAX_POS 1000  // E0 extruder maximum position (large positive for bioink extrusion)
 #define I_MIN_POS 0     // BIOPRINTER: I axis (U) minimum - endstop at 0
@@ -1554,7 +1555,7 @@
 #define J_MAX_POS 50    // BIOPRINTER: J axis (V) maximum travel
 #define X_MAX_POS X_BED_SIZE
 #define Y_MAX_POS Y_BED_SIZE
-#define Z_MAX_POS 10
+#define Z_MAX_POS 60  // BIOPRINTER: Z travel 0-50mm
 
 //#define I_MAX_POS 475 //// deb changes
 //#define I_MIN_POS 0
@@ -2015,12 +2016,12 @@
  *   M501 - Read settings from EEPROM. (i.e., Throw away unsaved changes)
  *   M502 - Revert settings to "factory" defaults. (Follow with M500 to init the EEPROM.)
  */
-//#define EEPROM_SETTINGS     // Persistent storage with M500 and M501
+#define EEPROM_SETTINGS       // BIOPRINTER: Enabled for BTT TFT70 V3.0 (stores calibration + TFT settings)
 //#define DISABLE_M503        // Saves ~2700 bytes of flash. Disable for release!
 #define EEPROM_CHITCHAT       // Give feedback on EEPROM commands. Disable to save PROGMEM.
 #define EEPROM_BOOT_SILENT    // Keep M503 quiet and only give errors during first load
 #if ENABLED(EEPROM_SETTINGS)
-  //#define EEPROM_AUTO_INIT  // Init EEPROM automatically on any errors.
+  #define EEPROM_AUTO_INIT   // BIOPRINTER: Auto-init EEPROM on errors (prevents hang on first boot)
   //#define EEPROM_INIT_NOW   // Init EEPROM on first boot after a new build.
 #endif
 
@@ -2390,7 +2391,8 @@
 //
 // Note: Usually sold with a white PCB.
 //
-#define REPRAP_DISCOUNT_SMART_CONTROLLER
+// BIOPRINTER: Disabled - using BTT TFT70 V3.0 touch screen in serial mode
+//#define REPRAP_DISCOUNT_SMART_CONTROLLER
 
 //
 // GT2560 (YHCB2004) LCD Display
