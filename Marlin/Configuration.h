@@ -113,7 +113,7 @@
  *
  * :[-1, 0, 1, 2, 3, 4, 5, 6, 7]
  */
-#define SERIAL_PORT 1
+#define SERIAL_PORT 1       // BIOPRINTER TEST: USART1 primary (PA9/PA10) — swap test
 
 /**
  * Serial Port Baud Rate
@@ -134,8 +134,8 @@
  * Currently Ethernet (-2) is only supported on Teensy 4.1 boards.
  * :[-2, -1, 0, 1, 2, 3, 4, 5, 6, 7]
  */
-#define SERIAL_PORT_2 -1      // BIOPRINTER: Reverted - USART3 init interferes with USART1 on Octopus Pro
-//#define BAUDRATE_2 250000   // Enable to override BAUDRATE
+#define SERIAL_PORT_2 -1       // BIOPRINTER TEST: USB secondary (so PC terminal still works)
+#define BAUDRATE_2 250000
 
 /**
  * Select a third serial port on the board to use for communication with the host.
@@ -2550,7 +2550,7 @@
 // RepRapDiscount FULL GRAPHIC Smart Controller
 // https://reprap.org/wiki/RepRapDiscount_Full_Graphic_Smart_Controller
 //
-//#define REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER
+//#define REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER  // BIOPRINTER: disabled — TFT70 uses UART via SERIAL_PORT_2, not EXP1/EXP2 hardware LCD pins
 
 //
 // K.3D Full Graphic Smart Controller

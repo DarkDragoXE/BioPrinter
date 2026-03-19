@@ -4073,7 +4073,7 @@
  * Execute certain G-code commands immediately after power-on.
  */
 //#define STARTUP_COMMANDS "M17 Z"
-#define STARTUP_COMMANDS "M302 P1" //////// deb changes
+#define STARTUP_COMMANDS "M302 P1\nM105\nM155 S2"  // M105 sends temp immediately on boot; M155 S2 keeps auto-reporting every 2s
 /**
  * G-code Macros
  *
