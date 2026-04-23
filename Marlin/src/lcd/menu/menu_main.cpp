@@ -71,6 +71,7 @@ void menu_cancelobject();
 void menu_motion();
 void menu_temperature();
 void menu_configuration();
+void menu_bioprinter(); // BIOPRINTER: HEPA fan + UV LED controls
 
 #if HAS_POWER_MONITOR
   void menu_power_monitor();
@@ -338,6 +339,9 @@ void menu_main() {
   #endif
 
   SUBMENU(MSG_CONFIGURATION, menu_configuration);
+
+  // BIOPRINTER: HEPA fan on/off + UV LED off/50%/100%
+  SUBMENU_P(PSTR("Bioprinter"), menu_bioprinter);
 
   #if ENABLED(CUSTOM_MENU_MAIN)
     if (TERN1(CUSTOM_MENU_MAIN_ONLY_IDLE, !busy)) {

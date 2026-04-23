@@ -246,7 +246,10 @@ bool MarlinUI::detected() { return true; }
 
   void MarlinUI::show_bootscreen() {
     TERN_(SHOW_CUSTOM_BOOTSCREEN, show_custom_bootscreen());
-    show_marlin_bootscreen();
+    // BIOPRINTER: Skip Marlin logo when custom bootscreen is active
+    #ifndef SHOW_CUSTOM_BOOTSCREEN
+      show_marlin_bootscreen();
+    #endif
   }
 
   void MarlinUI::bootscreen_completion(const millis_t sofar) {

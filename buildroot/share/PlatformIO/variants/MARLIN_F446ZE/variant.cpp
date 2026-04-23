@@ -153,6 +153,23 @@ const PinName digitalPin[] = {
   PF_8,  //D124/A20 - 1:TIM11_CH1  2:ADC3_IN6
 };
 
+// Required by STM32duino framework for analog pin index resolution (A0..AN)
+const uint32_t analogInputPin[] = {
+   3, // A0,  PA3
+   4, // A1,  PA4
+  32, // A2,  PC0
+  33, // A3,  PC1
+  34, // A4,  PC2
+  35, // A5,  PC3
+  36, // A6,  PC4
+  83, // A7,  PF3 (ADC3_IN9)
+  84, // A8,  PF4 (ADC3_IN14)
+  85, // A9,  PF5 (ADC3_IN15)
+  86, // A10, PF6 (ADC3_IN4)
+  87, // A11, PF7 (ADC3_IN5)
+  88, // A12, PF8 (ADC3_IN6)
+};
+
 #ifdef __cplusplus
 }
 #endif

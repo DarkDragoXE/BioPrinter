@@ -21,6 +21,12 @@
  */
 #pragma once
 
+// Allow ADC3 DMA to stabilize before first temperature check on boot.
+// Without this, cold-boot ADC reads 0 -> MAXTEMP fires silently during setup() (IsRunning()
+// is false so no serial error) -> kill loop -> watchdog reset -> repeat until ADC warms up.
+// 15000ms gives enough time for 4x ADC3 channels to fully initialize within a single boot cycle.
+#define BOGUS_TEMPERATURE_GRACE_PERIOD 3000
+
 #include "env_validate.h"
 
 #define HAS_OTG_USB_HOST_SUPPORT                  // USB Flash Drive support
@@ -315,16 +321,16 @@
 //
 // Temperature Sensors
 //
-#define TEMP_BED_PIN                        PF3   // TB
-#define TEMP_1_PIN                          PF5   // TH1 (not used - E1 uses dummy thermistor)
-#define TEMP_2_PIN                          PF6   // TH2
-#define TEMP_3_PIN                          PF7   // TH3
-#define TEMP_CHAMBER_PIN                    PF6   // TH2 - J48 Chamber thermistor (moved from PF5)
+#define TEMP_BED_PIN                        PF5   // TB    - J46
+#define TEMP_1_PIN                          PF3   // TH1   - J44
+#define TEMP_2_PIN                          PF4   // TH2   J45
+#define TEMP_3_PIN                          PF8   // TH3   (unused)
+#define TEMP_CHAMBER_PIN                    PF6   // chamber - J48
 
 //
 // Heaters / Fans
 //
-#define HEATER_BED_PIN                      PA1   // Hotbed
+#define HEATER_BED_PIN                      PB10  // BIOPRINTER: Bed Peltier on HE2 (physical wiring), was PA1
 #ifndef HEATER_0_PIN
   #define HEATER_0_PIN                      PA2   // Heater0
 #endif

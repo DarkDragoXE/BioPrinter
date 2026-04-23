@@ -69,7 +69,7 @@
 // @section info
 
 // Author info of this build printed to the host during boot and M115
-#define STRING_CONFIG_H_AUTHOR "(BigTreeTech, Octopus// Debtonu DesigningAlley)" // Who made the changes.
+#define STRING_CONFIG_H_AUTHOR "(Debtonu DesigningAlley)" // Who made the changes.
 //#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
 
 /**
@@ -85,9 +85,10 @@
 
 // Show the Marlin bootscreen on startup. ** ENABLE FOR PRODUCTION **
 #define SHOW_BOOTSCREEN
+#define BOOTSCREEN_TIMEOUT 0   // BIOPRINTER: Skip Marlin logo; only custom screen shows
 
 // Show the bitmap in Marlin/_Bootscreen.h on startup.
-//#define SHOW_CUSTOM_BOOTSCREEN
+#define SHOW_CUSTOM_BOOTSCREEN
 
 // Show the bitmap in Marlin/_Statusscreen.h on the status screen.
 //#define CUSTOM_STATUS_SCREEN_IMAGE
@@ -102,7 +103,7 @@
  */
 // Choose the name from boards.h that matches your setup
 #ifndef MOTHERBOARD
-  #define MOTHERBOARD BOARD_BTT_OCTOPUS_PRO_V1_0
+  #define MOTHERBOARD BOARD_BTT_OCTOPUS_PRO_V1_1
 #endif
 
 /**
@@ -113,7 +114,7 @@
  *
  * :[-1, 0, 1, 2, 3, 4, 5, 6, 7]
  */
-#define SERIAL_PORT 1       // BIOPRINTER TEST: USART1 primary (PA9/PA10) — swap test
+#define SERIAL_PORT -1      // USB CDC primary (matches reference firmware)
 
 /**
  * Serial Port Baud Rate
@@ -134,7 +135,7 @@
  * Currently Ethernet (-2) is only supported on Teensy 4.1 boards.
  * :[-2, -1, 0, 1, 2, 3, 4, 5, 6, 7]
  */
-#define SERIAL_PORT_2 -1       // BIOPRINTER TEST: USB secondary (so PC terminal still works)
+#define SERIAL_PORT_2 1        // USART1 secondary — PA9(TX)/PA10(RX) for BTT TFT70
 #define BAUDRATE_2 250000
 
 /**
@@ -183,8 +184,19 @@
 #define CUSTOM_UV_LED2_PIN  69  // PE5 (FAN1_PIN) - UV LED 2
 #define UV_LED2_CUSTOM_PIN_STATE LOW  // Start with UV LED 2 off
 
+// HEPA fan switch — PD15 (FAN5_PIN), on/off via M42 P63 S255 / M42 P63 S0
+#define CUSTOM_HEPA_FAN_PIN  63  // PD15 (FAN5_PIN)
+#define HEPA_FAN_PIN_STATE LOW   // S255=HIGH=ON, S0=LOW=OFF — pin starts LOW = HEPA OFF at startup
+
+#define CUSTOM_CHAMBER_LIGHT_PIN  22  // PB6 (J43 BL_Touch) - Chamber light signal
+#define CHAMBER_LIGHT_PIN_STATE  LOW  // LOW = light OFF at startup
+
+#define CUSTOM_CHAMBER_LIGHT_PIN  27  // PB11 (HE3) - Chamber light
+#define CHAMBER_LIGHT_PIN_STATE  LOW  // LOW = light OFF at startup
+
+
 // Name displayed in the LCD "Ready" message and Info menu
-//#define CUSTOM_MACHINE_NAME "DA Bio Printer"
+#define CUSTOM_MACHINE_NAME "SQUYD"
 
 // Printer's unique ID, used by some programs to differentiate between machines.
 // Choose your own or use a service like https://www.uuidgenerator.net/version4
@@ -259,11 +271,11 @@
   #define AXIS6_ROTATES
 #endif
 #ifdef U_DRIVER_TYPE
-  #define AXIS7_NAME 'U' // :['U', 'V', 'W']
+  //#define AXIS7_NAME 'U' // :['U', 'V', 'W']
   //#define AXIS7_ROTATES
 #endif
 #ifdef V_DRIVER_TYPE
-  #define AXIS8_NAME 'V' // :['V', 'W']
+  //#define AXIS8_NAME 'V' // :['V', 'W']
   //#define AXIS8_ROTATES
 #endif
 #ifdef W_DRIVER_TYPE
@@ -584,17 +596,17 @@
 //#define TEMP_BED_PIN -1
 //#define TEMP_CHAMBER_PIN -1
 ///////////////////////// deb changes - MATCHED TO KESHAVAFIRMWARE
-#define TEMP_SENSOR_0 1  // E0 hotend - 100kΩ thermistor type 1
-#define TEMP_SENSOR_1 1  // E1 hotend - 100kΩ thermistor type 1 (CHANGED from 998)
+#define TEMP_SENSOR_0 1
+#define TEMP_SENSOR_1 1
 #define TEMP_SENSOR_2 0
 #define TEMP_SENSOR_3 0
 #define TEMP_SENSOR_4 0
 #define TEMP_SENSOR_5 0
 #define TEMP_SENSOR_6 0
 #define TEMP_SENSOR_7 0
-#define TEMP_SENSOR_BED 1  // Heated bed - 100kΩ thermistor type 1 (CHANGED from 0)
+#define TEMP_SENSOR_BED 1
 #define TEMP_SENSOR_PROBE 0
-#define TEMP_SENSOR_CHAMBER 1  // Chamber - 100kΩ thermistor type 1
+#define TEMP_SENSOR_CHAMBER 1
 #define TEMP_SENSOR_COOLER 0
 #define TEMP_SENSOR_BOARD 0
 #define TEMP_SENSOR_REDUNDANT 0
@@ -639,7 +651,7 @@
 
 // Below this temperature the heater will be switched off
 // because it probably indicates a broken thermistor wire.
-#define HEATER_0_MINTEMP   1  // BIOPRINTER: Minimum cooling temperature for Peltier (1°C safety limit)
+#define HEATER_0_MINTEMP   5
 #define HEATER_1_MINTEMP   5
 #define HEATER_2_MINTEMP   5
 #define HEATER_3_MINTEMP   5
@@ -653,7 +665,7 @@
 // Above this temperature the heater will be switched off.
 // This can protect components from overheating, but NOT from shorts and failures.
 // (Use MINTEMP for thermistor short/failure protection.)
-#define HEATER_0_MAXTEMP  60  // BIOPRINTER: Maximum heating temperature for Peltier (60°C safety limit)
+#define HEATER_0_MAXTEMP 275
 #define HEATER_1_MAXTEMP 275
 #define HEATER_2_MAXTEMP 275
 #define HEATER_3_MAXTEMP 275
@@ -661,8 +673,8 @@
 #define HEATER_5_MAXTEMP 275
 #define HEATER_6_MAXTEMP 275
 #define HEATER_7_MAXTEMP 275
-#define BED_MAXTEMP      40
-#define CHAMBER_MAXTEMP  60
+#define BED_MAXTEMP      150
+#define CHAMBER_MAXTEMP   60
 
 /**
  * Thermal Overshoot
@@ -2018,7 +2030,7 @@
  */
 #define EEPROM_SETTINGS       // BIOPRINTER: Enabled for BTT TFT70 V3.0 (stores calibration + TFT settings)
 //#define DISABLE_M503        // Saves ~2700 bytes of flash. Disable for release!
-#define EEPROM_CHITCHAT       // Give feedback on EEPROM commands. Disable to save PROGMEM.
+//#define EEPROM_CHITCHAT       // Disabled: M503 output floods TFT RX buffer causing ACK timeout. M503 now returns just "ok".
 #define EEPROM_BOOT_SILENT    // Keep M503 quiet and only give errors during first load
 #if ENABLED(EEPROM_SETTINGS)
   #define EEPROM_AUTO_INIT   // BIOPRINTER: Auto-init EEPROM on errors (prevents hang on first boot)
@@ -2336,7 +2348,7 @@
 //
 //  Set this option if CLOCKWISE causes values to DECREASE
 //
-#define REVERSE_ENCODER_DIRECTION
+//#define REVERSE_ENCODER_DIRECTION
 
 //
 // This option reverses the encoder direction for navigating LCD menus.
@@ -2550,7 +2562,7 @@
 // RepRapDiscount FULL GRAPHIC Smart Controller
 // https://reprap.org/wiki/RepRapDiscount_Full_Graphic_Smart_Controller
 //
-//#define REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER  // BIOPRINTER: disabled — TFT70 uses UART via SERIAL_PORT_2, not EXP1/EXP2 hardware LCD pins
+#define REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER  // BIOPRINTER: disabled — TFT70 uses UART via SERIAL_PORT_2, not EXP1/EXP2 hardware LCD pins
 
 //
 // K.3D Full Graphic Smart Controller

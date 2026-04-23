@@ -82,7 +82,9 @@ void GcodeSuite::M42() {
   }
 
   if (!parser.seenval('S')) return;
-  const byte pin_status = parser.value_byte();
+  byte pin_status = parser.value_byte();
+
+  // BIOPRINTER: P63 (HEPA) — no inversion, S255=HIGH, S0=LOW
 
   #if HAS_FAN
     switch (pin) {

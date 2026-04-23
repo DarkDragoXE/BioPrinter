@@ -1,0 +1,739 @@
+ELECTRONICS ENGINEER - INTERVIEW QUESTIONS AND ANSWERS
+=======================================================
+
+
+SECTION A: GENERAL EMBEDDED & ELECTRONICS
+==========================================
+
+
+Q1 - Project Based
+-------------------
+Describe an embedded system you built end to end. What microcontroller did you use,
+what did it control, and what was the hardest technical problem you solved?
+
+EVALUATION NOTES (not for candidate):
+No single correct answer. A good answer includes:
+- Specific MCU (not just "Arduino")
+- Real constraints they designed around (power, timing, size)
+- A genuine hard problem, not "setting up I2C was tricky"
+- What they would do differently, shows self-awareness
+Red flag: Vague answers like "I built a smart home system using ESP32 and it worked great"
+
+
+Q2 - Circuit Design
+--------------------
+You need to switch a 12V inductive load using a 3.3V microcontroller GPIO.
+Describe the complete circuit you would design, including every protection
+component and why it is there.
+
+ANSWER:
+Complete circuit:
+
+3.3V GPIO -- [100 ohm gate resistor] --> MOSFET gate (e.g. IRLZ44N, logic level)
+                                          MOSFET source --> GND
+                                          MOSFET drain --> Load negative
+                                          Load positive --> 12V
+                                          1N4007 flyback diode across load (cathode to 12V)
+
+Component reasoning:
+
+Logic-level MOSFET:
+Standard MOSFET needs 10V gate drive and will not fully turn on at 3.3V.
+IRLZ44N turns on fully at 3.3V. Using a standard MOSFET here causes it to
+operate in the linear region, generating excessive heat and not switching properly.
+
+Gate resistor (100 ohm):
+Limits inrush current into gate capacitance, damps oscillation, and slows the
+switching edge to reduce EMI. Without it the gate can ring and cause unpredictable
+switching behaviour.
+
+Flyback diode:
+Inductive load stores energy in its magnetic field. When the MOSFET switches off,
+that energy must go somewhere. Without a diode it appears as a large voltage spike
+on the drain, which destroys the MOSFET. The diode clamps this spike and safely
+dissipates energy back into the supply.
+
+Gate pull-down resistor (10k ohm to GND, optional but recommended):
+Ensures the MOSFET stays off when the GPIO is floating during MCU boot or reset.
+Without this the load can briefly switch on at power-up.
+
+
+Q3 - Debugging: Hardware
+-------------------------
+You bring up a new PCB for the first time. The microcontroller is unresponsive.
+No serial output, no LED, no response to flash attempts. Walk through your
+debugging process step by step.
+
+ANSWER:
+
+Step 1 - Measure power rails
+Multimeter on all VDD pins. Is the correct voltage present? If 0V, trace back to
+the regulator. If lower than expected, the board may have a short drawing excess current.
+
+Step 2 - Check for shorts
+Power off. Measure resistance between VDD and GND. Should be several kilohms minimum.
+Near 0 ohm means solder bridge or damaged component. Check visually under magnification.
+
+Step 3 - Verify crystal and clock
+Oscilloscope on crystal pins. If there is no oscillation, the MCU will not run.
+Check load capacitors are correct value and placed correctly.
+
+Step 4 - Check BOOT pins
+On STM32, the BOOT0 pin determines boot mode. If BOOT0 is floating or HIGH, the MCU
+boots into bootloader, not your firmware. Check the boot pin state and pull-down resistor.
+
+Step 5 - Check NRST
+NRST should be HIGH during normal operation. If stuck LOW, the MCU is held in reset.
+Check the reset circuit and any external reset devices.
+
+Step 6 - Try connecting debugger
+Attempt to connect via SWD using ST-Link or J-Link. If the debugger sees the chip,
+the MCU is alive and the problem is firmware. If no connection at all, the fault is hardware.
+
+Step 7 - Visual inspection under magnification
+Look for solder bridges, tombstoned components, backwards ICs, missing bypass capacitors.
+These are the most common causes of first-bring-up failures.
+
+
+Q4 - Debugging: Firmware
+-------------------------
+A sensor is returning correct values in testing but randomly returns garbage
+in the final product. Nothing in the code changed. What do you investigate?
+
+ANSWER:
+
+Hardware causes:
+
+Power supply noise:
+The bench supply is clean. The real product has switching noise from motors and relays
+that couples into the ADC reference or sensor supply rail. This causes erratic readings
+that never appear on the bench.
+
+Ground loops:
+Different ground potentials between the sensor and the MCU in the final machine wiring.
+Even a few millivolts of ground offset corrupts ADC readings.
+
+Long cable acting as antenna:
+In the real environment, cable picks up EMI from motors and switching circuits.
+This does not occur on the bench with short cables.
+
+Signal voltage exceeding ADC input range:
+Causes latch-up or erratic readings. Check that no transient on the signal line
+exceeds the MCU supply voltage.
+
+Firmware causes:
+
+Interrupt collision:
+Another interrupt fires mid-conversion and corrupts the result buffer.
+Check interrupt priorities and ensure ADC result registers are read atomically.
+
+DMA misconfiguration:
+DMA writing to wrong memory location under certain timing conditions.
+Happens when buffer sizes or addresses are set up incorrectly.
+
+Missing volatile keyword:
+Compiler optimises away reads of a variable that is being updated by an interrupt.
+Any variable shared between main code and an ISR must be declared volatile.
+
+Buffer overflow:
+Adjacent memory corrupted by another process overwriting the sensor buffer.
+
+How to isolate:
+Replicate real conditions on the bench. Same cable lengths, same power supply,
+run motors and other loads nearby. Add logging to capture the exact conditions
+when garbage values appear.
+
+
+Q5 - Communication Protocols
+------------------------------
+You have a device communicating over UART that intermittently sends corrupted data.
+List every possible cause you can think of and how you would isolate the real one.
+
+ANSWER:
+
+Baud rate mismatch:
+Scope the line. Measure the width of one bit in microseconds and calculate the
+actual baud rate. Compare to both ends.
+
+TX and RX swapped:
+Check wiring. With a scope, confirm activity appears on the RX pin when the remote
+device is transmitting.
+
+Missing or wrong ground reference:
+Measure voltage between GND of both boards. Should be 0V. Any difference corrupts
+the logic levels.
+
+Voltage level mismatch (3.3V vs 5V):
+Measure logic HIGH voltage on the receiving pin. 5V into a 3.3V input can damage
+the pin and causes erratic behaviour.
+
+Cable too long or capacitance rounding edges:
+Scope the RX pin close to the receiver. If rising and falling edges are rounded and
+slow, signal integrity is the issue. Shorten cable or add series termination.
+
+EMI from nearby switching:
+Check if corruption correlates with motor movement or relay switching events.
+If yes, add shielding, twisted pair cable, or ferrite beads.
+
+Missing pull-up on open-drain line:
+Measure idle state. Should be HIGH. If floating or LOW when idle, pull-up is missing.
+
+Software buffer overflow:
+Log exactly when corruption occurs. If it only happens at high data rates or when
+the host is busy, the receive buffer is overflowing before data is read.
+
+Parity or stop bit mismatch:
+Check configuration on both ends. A single bit difference causes every frame to
+be flagged as an error.
+
+Interrupt priority conflict:
+If corruption only occurs during specific operations such as motor moves or sensor
+reads, a higher-priority interrupt is delaying the UART interrupt and causing
+buffer overrun.
+
+
+Q6 - Thermal
+-------------
+A component on your board is running hotter than expected under load.
+How do you diagnose how hot it actually is, find the cause, and fix it?
+
+ANSWER:
+
+Measuring actual temperature:
+- Thermocouple or IR thermometer held against the component body
+- Thermal camera if available, best for finding hot spots across the whole board
+- NTC thermistor taped to the component surface as a low-cost alternative
+
+Finding the cause:
+Calculate expected power dissipation first.
+For MOSFETs: P = I squared x Rds(on)
+For linear regulators: P = (Vin - Vout) x I
+
+Compare calculated to actual. If the component is much hotter than the calculation
+predicts, look for unexpected current paths, wrong component placed, or the component
+operating in linear region instead of saturation.
+
+Check whether temperature stabilises or keeps rising. Stabilising means steady-state
+thermal resistance issue. Keep rising means thermal runaway or unexpected power source.
+
+Check airflow. Even a small fan or vent changes component temperature significantly.
+
+Fixes in order of preference:
+
+1. Reduce power dissipation: use a switching topology instead of linear, or select a
+   component with lower Rds(on) or lower dropout voltage.
+2. Improve thermal path: add thermal pad, heatsink, or thermal vias to copper pours.
+3. Add airflow: direct a fan at the component.
+4. Spread copper on PCB: large ground and power pours act as passive heatsinks.
+5. Derate the component: if running near its rating, select a higher-rated part.
+
+
+Q7 - PCB Design
+----------------
+What are the most common mistakes engineers make on their first few PCB designs?
+What rules do you follow for mixed signal boards with both power and digital circuits?
+
+ANSWER:
+
+Common first-timer mistakes:
+
+Decoupling capacitors too far from MCU power pins:
+They stop working above a few megahertz if the trace is longer than a few millimetres.
+Must be physically as close as possible, within 1mm ideally.
+
+No ground plane:
+Without a solid ground plane, return currents take random paths through the board
+and create noise everywhere. Almost every board should have a solid ground plane.
+
+Mixing analog and digital ground incorrectly:
+They should be separate pours that meet at exactly one point near the power supply.
+Joining them at multiple points creates ground loops.
+
+Connector footprints wrong:
+Most common reason for board respins. Always verify connector pinout and footprint
+against the physical part before ordering.
+
+No test points:
+Impossible to debug a board without probe access. Add test points on every key signal,
+power rail, and ground.
+
+Via in pad without filling:
+Solder wicks into the via during reflow and leaves insufficient solder on the pad.
+Either avoid vias in pads or specify filled and plated vias in fabrication notes.
+
+Silkscreen over pads:
+Causes soldering issues. Keep silkscreen clear of all pad areas.
+
+Rules for mixed signal boards:
+
+Separate analog and digital power planes. Connect them at one star point near the
+power entry, not at multiple locations.
+
+Keep analog traces away from switching signals such as clocks, PWM lines, and motor
+drive traces. Even short parallel runs couple noise.
+
+Calculate trace width for all high-current paths. Use at least 1mm for 2A on 1oz
+copper. Do not rely on defaults.
+
+Place 100nF decoupling capacitors on every MCU VDD pin, as close as physically possible.
+
+Stepper driver thermal pads must connect to large copper pours with thermal vias
+to inner copper layers. This is the primary thermal path.
+
+Keep step and direction signal traces away from motor coil traces.
+Motor lines switch fast and inject noise into adjacent signals.
+
+
+Q8 - Case Study
+----------------
+A motion control system works perfectly on the bench but misses steps randomly
+when installed in the final machine. No changes were made to firmware or hardware.
+What are the possible causes and how do you find the real one?
+
+ANSWER:
+
+The key observation is that bench performance is perfect but the installed machine
+is not. Focus entirely on what is different in the installed environment.
+
+Electrical noise from machine wiring:
+Long motor cables in the machine act as antennas and couple switching noise into
+step, direction, and endstop signal lines. This does not occur on the bench with
+short cables in a clean environment.
+Test: scope step and direction lines while the machine is running. Look for noise
+spikes that could be interpreted as false pulses.
+
+Power supply voltage drop under full load:
+The bench PSU is well-regulated. The machine PSU may sag when all axes run
+simultaneously and other loads are present.
+Test: measure PSU output voltage with all machine loads active during a print.
+Compare to voltage measured on the bench.
+
+Mechanical binding or increased load:
+The installed machine has more friction due to weight, alignment differences, or
+temperature effects. The motor loses steps because it cannot produce enough torque.
+Test: turn the axis by hand in both conditions. Does it feel stiffer in the machine?
+Temporarily increase motor current by 10 percent and check if steps are still lost.
+
+Vibration causing endstop false triggers:
+Machine vibration during moves can cause an endstop switch to momentarily trigger.
+Marlin and similar firmware treat this as a real endstop event and stop or reset
+the axis position.
+Test: check if missed steps correlate with high-speed moves or direction changes
+where vibration is highest. Add debounce filtering to endstop inputs.
+
+Motor driver overheating:
+In the enclosed machine there is less airflow than on the open bench. Drivers heat
+up over time, trigger thermal protection, reduce current output, and steps are lost.
+Test: measure driver temperature after running for ten minutes in the machine.
+Compare to bench temperature.
+
+Ground loops through machine frame:
+The metal chassis of the machine connects circuit grounds through multiple paths
+at different potentials. This creates noise on signal lines.
+Test: measure voltage between ground points at different locations in the machine.
+Add a single-point ground connection between all boards and chassis.
+
+
+=======================================================
+SECTION B: ROLE-SPECIFIC TECHNICAL QUESTIONS
+=======================================================
+
+
+Q1 - STM32 Microcontrollers
+-----------------------------
+You are configuring a UART peripheral on an STM32 microcontroller. What registers
+or settings do you need to configure, and what are the most common mistakes that
+cause it to not work on first try?
+
+ANSWER:
+
+What must be configured:
+
+Clock enable:
+Enable the USART peripheral clock via the RCC register before writing to any USART
+register. If the clock is not enabled, writes to registers are silently ignored.
+
+GPIO alternate function:
+TX and RX pins must be set to alternate function mode with the correct AF number.
+For example, AF7 is used for USART1 on STM32F4 series. The wrong AF number means
+the UART initialises but nothing comes out of the pin.
+
+Baud rate register (BRR):
+Calculated from peripheral clock frequency divided by desired baud rate.
+Using the wrong clock source, APB1 versus APB2, produces a baud rate wrong by
+exactly a factor of 2.
+
+Word length, stop bits, parity:
+Must match exactly on both ends of the connection.
+
+TE and RE bits:
+Transmitter enable and receiver enable in the CR1 register. Forgetting either
+means one direction simply does not work with no error indication.
+
+NVIC configuration:
+If using interrupts, the USART interrupt request must be enabled in the NVIC and
+priority must be set. Without this the interrupt handler never fires.
+
+Most common first-try mistakes:
+
+Wrong GPIO alternate function number:
+The code looks correct but the pin does nothing. Always verify the AF number in
+the MCU datasheet alternate function table, not just the reference manual.
+
+APB1 versus APB2 clock confusion:
+USART1 and USART6 are on APB2. USART2, USART3 are on APB1.
+Using the wrong clock source makes the baud rate exactly 2x wrong, which looks
+like a baud rate mismatch problem.
+
+Forgetting to enable peripheral clock:
+Registers appear to exist but all writes are ignored silently. No error is reported.
+
+TX pin not configured as push-pull output:
+If configured as input or open-drain, the signal never drives HIGH and only LOW
+transitions are visible on the line.
+
+Misreading the alternate function table:
+TX and RX on the same pin number but different ports. For example, PA9 and PB9
+look similar in a table but connect to completely different signals.
+
+
+Q2 - Stepper Motors and Drivers
+---------------------------------
+What is microstepping and what are its trade-offs? At what point does increasing
+microstepping stop improving motion quality, and why?
+
+ANSWER:
+
+What microstepping is:
+Full step means the motor moves one full tooth pitch per pulse. Microstepping divides
+each full step into smaller increments by energising both coils simultaneously at
+varying current ratios. This creates intermediate positions between full steps.
+
+Steps per revolution for a standard 200-step motor:
+Full step:  200 steps,  1.8 degrees per step
+1/8 step:   1600 steps, 0.225 degrees per step
+1/16 step:  3200 steps, 0.1125 degrees per step
+1/256 step: 51200 steps, 0.007 degrees per step
+
+Trade-offs:
+
+Higher microstepping gives smoother motion and less vibration, but holding torque
+drops significantly above 1/16 microstepping. More pulses are required for the same
+distance, increasing CPU load. Positional resolution improves in theory but not in
+practice beyond the motor's mechanical tolerance.
+
+Where it stops helping:
+
+Beyond 1/16 or 1/32 microstepping, real-world improvements stop because:
+
+The mechanical tolerance of the motor itself, including shaft wobble and tooth
+irregularity, is typically plus or minus 5 percent of a full step. No amount of
+finer microstepping can overcome this physical limitation.
+
+Load torque variation overwhelms the very small holding force of a high microstep.
+The motor snaps to the nearest full or half step under any real load.
+
+Intermediate positions are only accurate when the motor is completely stationary
+and unloaded.
+
+This is why TMC drivers use 256 microsteps internally for smoothness but interpolate
+from whatever external step rate is commanded. The motion feels smooth without
+incurring the torque penalty of true 256 microstepping.
+
+
+Q3 - TMC Drivers
+-----------------
+What is the advantage of running TMC stepper drivers in UART mode over standalone
+mode? What can you configure over UART that you cannot in standalone?
+
+ANSWER:
+
+Standalone mode:
+Configured entirely by physical pins (CFG0, CFG1, CFG2). Limited to a small number
+of preset combinations of current and chopper settings. The configuration is fixed
+at the hardware level and cannot be changed without physically moving jumpers.
+
+UART mode allows configuration of:
+
+Run current (IRUN):
+Set the exact RMS current in milliamps. Not just a preset level but a precise value
+matched to the specific motor.
+
+Hold current (IHOLD):
+Reduce current when the motor is stationary to decrease heat generation.
+
+Hold delay (IHOLDDELAY):
+Configure how long after a move stops before current reduces to the hold level.
+
+StealthChop speed threshold:
+Switch automatically between silent StealthChop mode and high-torque SpreadCycle
+mode at a configurable speed threshold.
+
+StallGuard sensitivity:
+Tune the sensorless homing detection threshold for the specific motor, load, and
+speed. Cannot be adjusted at all in standalone mode.
+
+CoolStep threshold:
+Dynamic current reduction under light load, saving power and reducing heat.
+
+Chopper timing settings:
+Fine-tune for the inductance of the specific motor being used.
+
+Driver status readback (most important):
+Read driver temperature, stall detection flags, short-circuit flags, and actual
+motor current in real time. This is completely impossible in standalone mode.
+In standalone mode, the driver can be overheating or losing sync with no indication.
+In UART mode, polling the driver status gives full visibility into what is happening.
+
+
+Q4 - PCB Layout
+----------------
+You are laying out a PCB that has stepper motor drivers, an STM32, and analog
+temperature sensors all on the same board. What are your layout priorities and why?
+
+ANSWER:
+
+Priority 1: Stepper driver placement and thermal management
+Place drivers at the edge of the board for airflow access. The thermal pad on the
+underside of the driver package must connect to a large copper pour with at least
+8 to 10 thermal vias to inner and back copper layers. Stepper drivers are the
+highest power components on the board and thermal failure is the most common
+board failure mode in motion control systems.
+
+Priority 2: Analog sensor area isolation
+Place thermistor inputs, ADC reference, and analog filter components in a dedicated
+corner of the board. No high-frequency traces should run near or underneath this
+area. The analog ground should be a quiet island connected to the main ground plane
+at exactly one point to prevent digital switching noise from coupling in.
+
+Priority 3: Decoupling capacitors
+Place a 100nF ceramic capacitor on every VDD pin of the STM32, within 1mm physically.
+Stepper drivers need bulk capacitance of at least 100uF on their motor voltage input,
+placed right at the VMOT pin to handle the switching current spikes.
+
+Priority 4: High-current path routing
+Motor coil traces carry 1 to 3 amps. Use a trace width calculator. At minimum 1mm
+width for 2A on 1oz copper. Keep these traces short and do not route them near analog
+or signal lines. Use a star ground connection for motor return currents back to the
+main ground point.
+
+Priority 5: Crystal and clock circuit
+Place the crystal and its load capacitors as close to the MCU as physically possible.
+No other traces should pass underneath the crystal circuit as this introduces noise
+and can cause clock instability.
+
+Priority 6: Step and direction signal routing
+Keep step and direction signal traces away from motor coil traces. Motor coil lines
+switch at high current and couple noise into adjacent signal traces, causing false
+steps or direction changes.
+
+
+Q5 - Sensor Integration
+------------------------
+You are reading a thermistor with an ADC. Your readings are noisy and drift
+slightly over time. What are the possible hardware and firmware causes and
+how do you fix each?
+
+ANSWER:
+
+Hardware causes and fixes:
+
+No filtering capacitor on ADC input:
+Add a 100nF ceramic capacitor from the ADC input pin to GND, placed right at the pin.
+This forms a low-pass filter with the source resistance and removes high-frequency noise.
+
+VREF+ noise:
+Decouple the ADC voltage reference with a 100nF capacitor and a 10uF capacitor close
+to the VREF pin. A noisy reference directly modulates every ADC reading.
+
+Thermistor supply rail noise:
+Power the thermistor voltage divider from a filtered 3.3V rail, not directly from
+a noisy supply. Use an RC filter on the supply to the divider if needed.
+
+Long cable picking up EMI:
+Add an RC low-pass filter at the board entry point where the cable connects.
+1 kilohm series resistance and 100nF to GND is a good starting point.
+
+Ground reference mismatch:
+Ensure the thermistor ground and the ADC ground are the same physical node.
+Any resistance in the ground path adds an offset error proportional to current.
+
+Self-heating of the thermistor:
+The excitation current through the thermistor heats it slightly, causing a reading
+error that increases over time. Use a higher resistance thermistor to reduce excitation
+current, or use a pulsed excitation approach.
+
+Firmware causes and fixes:
+
+No oversampling:
+Average 8 to 16 ADC readings before reporting a value. This reduces random noise
+by the square root of the number of samples.
+
+ADC reading during switching events:
+Trigger ADC conversions only when PWM outputs are in a known state, not during
+switching transitions. Synchronise ADC timing to PWM period.
+
+Integer truncation error:
+Accumulate the sum in a 32-bit variable before dividing by the number of samples.
+Dividing a 12-bit value by 16 using 16-bit integer math loses precision.
+
+Wrong Steinhart-Hart or Beta coefficients:
+Verify thermistor coefficients against the datasheet. Measure the thermistor at two
+or three known temperatures and compare to expected values.
+
+Note on drift specifically:
+Drift that increases slowly over time, independent of noise, is almost always caused
+by self-heating of the thermistor from its own excitation current, or thermal drift
+of the resistors in the voltage divider. Use 1 percent tolerance resistors minimum.
+
+
+Q6 - MOSFETs and Switching
+---------------------------
+You are using a MOSFET to PWM-control a resistive heater at 10Hz. Explain how you
+would select the MOSFET and what would change in your selection if the frequency
+was 50kHz instead.
+
+ANSWER:
+
+At 10Hz:
+The MOSFET switches only 10 times per second. Switching losses are completely
+negligible. The MOSFET spends almost all its time either fully on or fully off.
+
+Selection criteria at 10Hz:
+
+Rds(on): conduction loss equals I squared times Rds(on). At low frequency this
+is the only significant loss. Select the lowest Rds(on) available in the package.
+
+Logic-level gate drive: ensure Vgs(th) is compatible with your drive voltage.
+For a 3.3V GPIO, use a logic-level MOSFET such as IRLZ44N with Vgs(th) below 2V.
+A standard MOSFET with Vgs(th) of 4V will not fully turn on from 3.3V.
+
+Continuous current rating: must exceed the heater current with reasonable margin.
+
+Voltage rating: must exceed the supply voltage, typically with 2x margin.
+
+At 50kHz, everything changes:
+The MOSFET now switches 50,000 times per second. Switching losses dominate.
+
+Gate charge (Qg):
+Every switching cycle, the gate capacitance must be charged and discharged.
+This takes current from the gate driver. High Qg means high switching loss and
+a hot gate driver. Select low Qg.
+
+Rise and fall time:
+Slow transitions mean the MOSFET spends time in the linear region where both
+current and voltage are high simultaneously. This creates high instantaneous
+power dissipation. Select fast switching devices.
+
+Output capacitance (Coss):
+Charged and discharged every cycle. Contributes directly to switching loss.
+Select low Coss.
+
+Gate driver:
+At 50kHz a direct GPIO cannot supply gate current fast enough. Use a dedicated
+gate driver IC between the GPIO and the MOSFET gate. The driver must supply
+peak current equal to Qg divided by the desired transition time.
+
+PCB layout:
+At 50kHz, layout becomes critical. Keep the gate drive loop and power switching
+loop as small as possible. Parasitic inductance in the loop causes voltage spikes
+at switching that can destroy the MOSFET.
+
+
+Q7 - Serial Communication
+--------------------------
+What is the fundamental difference between UART, SPI, and I2C? For each one,
+give a real example of a component or use case where that protocol is the right choice.
+
+ANSWER:
+
+UART (Universal Asynchronous Receiver Transmitter):
+Asynchronous, meaning each device has its own clock. No shared clock line.
+Baud rate must be configured identically on both ends.
+Typically point-to-point only (one device to one device).
+Two wires: TX and RX. Full duplex.
+Speed: typically up to 5 Mbps in practice.
+
+Real use case: GPS module, Bluetooth module (HC-05), debug console output,
+communication between two microcontrollers, TMC2209 stepper driver configuration.
+Best choice when you need simple point-to-point communication at moderate speed
+and do not want to deal with addressing or a shared bus.
+
+SPI (Serial Peripheral Interface):
+Synchronous. Master provides the clock signal.
+Separate chip select line per device. Each device needs its own CS pin on the master.
+Four wires: MOSI, MISO, SCK, CS. Full duplex.
+Speed: up to 50 Mbps or higher depending on device.
+
+Real use case: SD card, SPI flash memory (W25Q64), TFT display, high-speed DAC or ADC.
+Best choice when you need fast data transfer and have the GPIO pins available.
+SD cards physically cannot use any other protocol.
+
+I2C (Inter-Integrated Circuit):
+Synchronous. Master provides clock on SCL line.
+Multiple devices share the same two wires using unique 7-bit addresses.
+Up to 127 devices on one bus.
+Two wires: SDA and SCL. Half duplex, bidirectional.
+Speed: 100kHz standard, 400kHz fast mode, 1MHz fast-plus mode.
+Requires pull-up resistors on both lines.
+
+Real use case: OLED display, BMP280 temperature and pressure sensor, EEPROM (AT24C32),
+RTC module (DS3231), multiple sensors sharing the same two wires.
+Best choice when you have many slow peripherals and want to minimise pin count.
+
+
+Q8 - Case Study
+----------------
+A stepper motor axis homes correctly and moves accurately for the first 10 minutes,
+then starts losing steps, getting worse over time until the machine is restarted.
+No firmware changes were made. What are your top 5 suspects and how do you test each?
+
+ANSWER:
+
+The key pattern is: works correctly, then degrades progressively, and restarts fix it.
+This points to a thermal or accumulation problem, not a random fault.
+
+Suspect 1: Stepper driver overheating (most likely)
+As driver temperature rises, the thermal protection circuit reduces current output
+to protect the device. Torque drops and steps are lost. Gets progressively worse
+as temperature climbs toward the protection threshold.
+Test: measure driver surface temperature with an IR thermometer after 10 minutes
+of operation. In UART mode, read the IRUN register and driver status flags to check
+if current is being reduced automatically.
+Fix: improve heatsinking, increase airflow over the driver, reduce IRUN by 10 percent.
+
+Suspect 2: Motor winding overheating
+Motor winding resistance increases with temperature. The same supply voltage drives
+less current through hotter windings. Less current means less torque. Steps are lost
+against the load.
+Test: measure motor body temperature after 10 minutes. Calculate what the current
+would be at the elevated winding temperature compared to cold.
+Fix: reduce hold current (IHOLD) to prevent the motor staying at full current
+when stationary. Improve airflow around the motor.
+
+Suspect 3: Mechanical binding increasing with temperature
+Thermal expansion of the frame, leadscrew, or linear rails causes friction to increase
+as the machine warms up. The motor must work harder against increasing mechanical load
+until it cannot keep up.
+Test: turn the axis by hand when cold and again after 10 minutes running.
+Check if resistance is greater when warm. Inspect axis alignment after running.
+Fix: adjust eccentric nuts, check belt tension or leadscrew nut preload, lubricate.
+
+Suspect 4: Power supply voltage sag
+The PSU heats up under sustained load and its output voltage drops slightly.
+Motor drivers receive less voltage, leaving less headroom for current regulation.
+Steps are lost under load conditions that were fine when the PSU was cool.
+Test: measure PSU output voltage at cold start and again after 10 minutes with
+all loads running. Any drop greater than 0.5V is significant.
+Fix: replace or upgrade the PSU. Add bulk electrolytic capacitance near the motor
+drivers to buffer momentary current demands.
+
+Suspect 5: Firmware timer drift or interrupt starvation
+Under sustained operation, a background process accumulates execution time and
+begins delaying step pulse generation. Pulses arrive too slowly for the commanded
+speed and the motor stalls.
+Test: check whether the problem occurs at all speeds equally or only above a
+certain speed. If only at higher speeds, the step rate is being throttled by
+CPU load. Scope the step pulse timing cold versus after 10 minutes.
+Fix: increase the step timer interrupt priority so it cannot be delayed by lower
+priority tasks. Profile background interrupt load and reduce unnecessary processing.

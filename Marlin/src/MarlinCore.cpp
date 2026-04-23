@@ -343,6 +343,22 @@ bool pin_is_protected(const pin_t pin) {
     if (pin == CUSTOM_UV_LED2_PIN) return false;
   #endif
 
+  // P63 (PD15/FAN5) - HEPA fan switch
+  #ifdef CUSTOM_HEPA_FAN_PIN
+    if (pin == CUSTOM_HEPA_FAN_PIN) return false;
+  #endif
+
+  // P22 (PB6/J43) - Chamber light
+  #ifdef CUSTOM_CHAMBER_LIGHT_PIN
+    if (pin == CUSTOM_CHAMBER_LIGHT_PIN) return false;
+  #endif
+
+  // P27 (PB11/HE3) - Chamber light
+  #ifdef CUSTOM_CHAMBER_LIGHT_PIN
+    if (pin == CUSTOM_CHAMBER_LIGHT_PIN) return false;
+  #endif
+
+
   #ifdef RUNTIME_ONLY_ANALOG_TO_DIGITAL
     static const pin_t sensitive_pins[] PROGMEM = { SENSITIVE_PINS };
     const size_t pincount = COUNT(sensitive_pins);
@@ -1204,6 +1220,25 @@ void setup() {
     digitalWrite(CUSTOM_UV_LED2_PIN, UV_LED2_CUSTOM_PIN_STATE);
   #endif
 
+  // BIOPRINTER: Initialize HEPA fan switch (PD15/FAN5, M42 P63 S255=ON / S0=OFF)
+  #if CUSTOM_HEPA_FAN_PIN
+    pinMode(CUSTOM_HEPA_FAN_PIN, OUTPUT);
+    digitalWrite(CUSTOM_HEPA_FAN_PIN, HEPA_FAN_PIN_STATE);
+  #endif
+
+  // BIOPRINTER: Initialize chamber light (PB6/J43, M42 P22 S255=ON / S0=OFF)
+  #if CUSTOM_CHAMBER_LIGHT_PIN
+    pinMode(CUSTOM_CHAMBER_LIGHT_PIN, OUTPUT);
+    digitalWrite(CUSTOM_CHAMBER_LIGHT_PIN, CHAMBER_LIGHT_PIN_STATE);
+  #endif
+
+  // BIOPRINTER: Initialize chamber light (PB11/HE3, M42 P27 S255=ON / S0=OFF)
+  #if CUSTOM_CHAMBER_LIGHT_PIN
+    pinMode(CUSTOM_CHAMBER_LIGHT_PIN, OUTPUT);
+    digitalWrite(CUSTOM_CHAMBER_LIGHT_PIN, CHAMBER_LIGHT_PIN_STATE);
+  #endif
+
+
   // BIOPRINTER: Initialize Peltier DPDT pins (active-LOW relays)
   // MATCHED TO KESHAVA firmware pattern
   // Pin HIGH = relay OFF = Cooling mode (S0)
@@ -1433,6 +1468,27 @@ void setup() {
   TERN_(HAS_M206_COMMAND, current_position += home_offset); // Init current position based on home_offset
 
   sync_plan_position();               // Vital to init stepper/planner equivalent for current_position
+
+  // BIOPRINTER: Pre-initialize ADC3 channels before the temperature ISR starts.
+  // All 4 thermistor pins (PF3/PF4/PF5/PF6) are on ADC3 which uses lazy init in
+  // the ststm32 framework — the ADC peripheral is not set up until the first
+  // analogRead() call per channel. If that first call happens inside the temperature
+  // ISR, the reading is 0 (ADC not yet settled), MAXTEMP fires, IsRunning()==false
+  // so no error is printed, kill loop begins, watchdog fires → silent reset loop.
+  // Two reads per channel: first triggers ADC3 peripheral init, second confirms valid.
+  hal.adc_init(); // Set 12-bit resolution before warmup reads
+  #if HAS_TEMP_ADC_0
+    analogRead(TEMP_0_PIN); analogRead(TEMP_0_PIN);
+  #endif
+  #if HAS_TEMP_ADC_1
+    analogRead(TEMP_1_PIN); analogRead(TEMP_1_PIN);
+  #endif
+  #if HAS_TEMP_ADC_BED
+    analogRead(TEMP_BED_PIN); analogRead(TEMP_BED_PIN);
+  #endif
+  #if HAS_TEMP_ADC_CHAMBER
+    analogRead(TEMP_CHAMBER_PIN); analogRead(TEMP_CHAMBER_PIN);
+  #endif
 
   SETUP_RUN(thermalManager.init());   // Initialize temperature loop
 
